@@ -1,9 +1,6 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:scheduler/provider/meeting_provider.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:scheduler/pages/widgets/meeting_list.dart';
+import 'package:scheduler/pages/widgets/table_calendar.dart';
 
 class MeetingSchedulerScreen extends StatelessWidget {
   const MeetingSchedulerScreen({super.key});
@@ -12,6 +9,7 @@ class MeetingSchedulerScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final kSize = MediaQuery.sizeOf(context);
     return Scaffold(
+      appBar: appBar(context),
       backgroundColor: Colors.black,
       body: SizedBox(
         height: kSize.height,
@@ -19,31 +17,26 @@ class MeetingSchedulerScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
-            children: [
-              Consumer<MeetingProvider>(
-                builder: (context, state, child) {
-                  return TableCalendar(
-                    calendarBuilders: state.calendarBuilders,
-                    onHeaderLongPressed: (date) {
-                      log("$date");
-                    },
-                    // headerStyle: HeaderStyle(decoration: BoxDecoration(color: Colors.red)),
-                    // calendarBuilders: () {},
-                    onHeaderTapped: (date) {
-                      log("${date}");
-                    },
-                    firstDay: DateTime(2000),
-                    focusedDay: DateTime.now(),
-                    lastDay: DateTime(2100),
-                  );
-                },
-              ),
-            ],
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [CustomTableCalendar(), MeetingList()],
           ),
         ),
       ),
     );
   }
+}
+
+AppBar appBar(BuildContext context) {
+  return AppBar(
+    backgroundColor: Colors.black,
+    title: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.calendar_month, color: Colors.white),
+        Text("Meeting Scheduler", style: TextStyle(color: Colors.white)),
+      ],
+    ),
+  );
 }
 
 

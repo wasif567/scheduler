@@ -1,187 +1,119 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:scheduler/core/app_colors/app_colors.dart';
 import 'package:scheduler/models/meeting_item/meeting_item.dart';
 import 'package:scheduler/models/meeting_model/meeting_response.dart';
+import 'package:scheduler/pages/widgets/meeting_list.dart';
 import 'package:scheduler/service/meeting_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class MeetingProvider with ChangeNotifier {
-  CalendarBuilders calendarBuilders = CalendarBuilders(
-    dowBuilder: (context, day) {
-      return SizedBox(
-        height: 15,
-        child: Center(child: Text(DateFormat('EEE').format(day), style: TextStyle(color: Colors.white))),
-      );
-    },
-    markerBuilder: (context, day, events) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 5),
-        child: Text(
-          "${day.day}",
-          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w500, color: Colors.green),
-        ),
-      );
-    },
-    todayBuilder: (context, day, focusedDay) {
-      return Container(
-        margin: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          shape: BoxShape.rectangle,
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(5),
-        ), //Change color
-        child: Center(child: Text("${day.day}", style: TextStyle(color: Colors.white))),
-      );
-    },
-    // markerBuilder: (context, day, events) {
-    //   return Padding(
-    //     padding: const EdgeInsets.only(bottom: 5),
-    //     child: Text(
-    //       viewState.getLabel(day),
-    //       style: AppTypography.interBold.merge(
-    //         TextStyle(fontSize: 9, fontWeight: FontWeight.w500, color: viewState.getLabelTxtColor(day)),
-    //       ),
-    //     ),
-    //   );
-    // },
-    // todayBuilder: (context, day, focusedDay) {
-    //   return Container(
-    //     margin: const EdgeInsets.all(2),
-    //     decoration: BoxDecoration(
-    //       shape: BoxShape.rectangle,
-    //       color: viewState.getBgColor(day),
-    //       borderRadius: BorderRadius.circular(5),
-    //     ), //Change color
-    //     child: Center(
-    //       child: FutureBuilder(
-    //         future: TranslationHelper().getTransDayNoText("${day.day}"),
-    //         builder: (context, snapshot) {
-    //           return Text(
-    //             snapshot.data ?? "${day.day}",
-    //             style: AppTypography.interBold.merge(const TextStyle(color: Colors.white)),
-    //           );
-    //         },
-    //       ),
-    //     ),
-    //   );
-    // },
-    selectedBuilder: (context, day, focusedDay) {
-      return Container(
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(shape: BoxShape.rectangle, borderRadius: BorderRadius.circular(5)),
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.rectangle,
-            color: Colors.red ,
-            borderRadius: BorderRadius.circular(5),
-          ), //Change color
-          child: Center(
-            child: FutureBuilder(
-              future: TranslationHelper().getTransDayNoText("${day.day}"),
-              builder: (context, snapshot) {
-                return Text(
-                  snapshot.data ?? "${day.day}",
-                  style: AppTypography.interBold.merge(
-                    const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      );
-    },
-    // outsideBuilder: (context, day, focusedDay) {
-    //   return Container(
-    //     padding: const EdgeInsets.all(2),
-    //     child: Container(
-    //       decoration: BoxDecoration(
-    //         shape: BoxShape.rectangle,
-    //         borderRadius: BorderRadius.circular(5),
-    //       ), //Change color
-    //       child: Center(
-    //         child: FutureBuilder(
-    //           future: TranslationHelper().getTransDayNoText("${day.day}"),
-    //           builder: (context, snapshot) {
-    //             return Text(
-    //               snapshot.data ?? "${day.day}",
-    //               style: AppTypography.interBold.merge(TextStyle(color: viewState.getDefaultBgColor(day))),
-    //             );
-    //           },
-    //         ),
-    //       ),
-    //     ),
-    //   );
-    // },
-    // defaultBuilder: (context, day, focusedDay) {
-    //   return Container(
-    //     padding: const EdgeInsets.all(2),
-    //     child: Container(
-    //       decoration: BoxDecoration(
-    //         shape: BoxShape.rectangle,
-    //         color: viewState.getBgColor(day),
-    //         borderRadius: BorderRadius.circular(5),
-    //       ), //Change color
-    //       child: Center(
-    //         child: FutureBuilder(
-    //           future: TranslationHelper().getTransDayNoText("${day.day}"),
-    //           builder: (context, snapshot) {
-    //             return Text(
-    //               snapshot.data ?? "${day.day}",
-    //               style: AppTypography.interBold.merge(TextStyle(color: viewState.getDefaultBgColor(day))),
-    //             );
-    //           },
-    //         ),
-    //       ),
-    //     ),
-    //   );
-    // },
-  );
-  // final MeetingService meetingService;
-  /* List<MeetingDate> _meetings = [];
-  DateTime _selectedDate = DateTime.now();
-  bool _isLoading = false;
-  String _error = '';
+  MeetingProvider() {
+    fetchingMeeting(DateTime.now());
+  }
 
-  MeetingProvider({required this.meetingService});
-
-  List<MeetingDate> get meetings => _meetings;
-  DateTime get selectedDate => _selectedDate;
-  bool get isLoading => _isLoading;
-  String get error => _error;
-
-  List<MeetingItem> get upcomingMeetings => _meetings.where((m) => m.isUpcoming(DateTime.now())).toList();
-  List<MeetingItem> get currentMeetings => _meetings.where((m) => m.isCurrent(DateTime.now())).toList();
-  List<MeetingItem> get previousMeetings => _meetings.where((m) => m.isPrevious(DateTime.now())).toList();
-
-  List<MeetingDate> get meetingsForSelectedDate =>
-      _meetings
-          .where(
-            (m) =>
-                m.m.year == _selectedDate.year &&
-                m.startTime.month == _selectedDate.month &&
-                m.startTime.day == _selectedDate.day,
-          )
-          .toList(); */
-
-  /* Future<void> fetchMeetings() async {
-    _isLoading = true;
+  MeetingResponse? _meetingResponse;
+  MeetingResponse? get meetingResponse => _meetingResponse;
+  set meetingResponse(MeetingResponse? val) {
+    _meetingResponse = val;
     notifyListeners();
+  }
 
+  DateTime _focusedDay = DateTime.now();
+  DateTime get focusedDay => _focusedDay;
+  set focusedDay(DateTime val) {
+    _focusedDay = val;
+    notifyListeners();
+  }
+
+  DateTime _selectedDay = DateTime.now();
+  DateTime get selectedDay => _selectedDay;
+  set selectedDay(DateTime val) {
+    _selectedDay = val;
+    notifyListeners();
+  }
+
+  List<DateTime> parsedDates = [];
+
+  fetchingMeeting(DateTime date) async {
     try {
-      _meetings = await meetingService.fetchMeetings();
-      _error = '';
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      parsedDates = [];
+      MeetingService service = MeetingService();
+      MeetingResponse? meetingRes = await service.fetchMeetings(date: date);
+
+      if (meetingRes != null) {
+        meetingResponse = meetingRes;
+        notifyListeners();
+
+        log("${meetingResponse!.toJson()}");
+        if (meetingResponse!.data.isNotEmpty) {
+          for (var meetindata in meetingResponse!.data) {
+            DateTime date = DateTime.parse(meetindata.date);
+
+            if (!parsedDates.contains(date)) {
+              parsedDates.add(date);
+            }
+
+            log("${meetindata.toJson()}");
+            for (var item in meetindata.items) {
+              log("${item.toJson()}");
+            }
+          }
+          log("${parsedDates.length}");
+        }
+      }
+    } catch (_) {
+      meetingResponse = null;
     }
   }
 
-  void setSelectedDate(DateTime date) {
-    _selectedDate = date;
+  Color defaultDayColor(DateTime day) {
+    final today = DateTime.now();
+    final DateTime justDate = DateTime(day.year, day.month, day.day);
+    final DateTime justToday = DateTime(today.year, today.month, today.day);
+    if (meetingResponse != null) {
+      if (meetingResponse!.data != null && meetingResponse!.data.isNotEmpty) {
+        if (meetingResponse!.data.any((meetingDate) => isSameDay(DateTime.parse(meetingDate.date), day))) {
+          if (isSameDay(justDate, justToday)) {
+            return Colors.yellow; // current day meeting
+          } else if (justDate.isAfter(justToday)) {
+            return Colors.green; // upcoming meeting
+          } else {
+            return Colors.grey; // past meeting
+          }
+        }
+      }
+    }
+
+    return Colors.transparent; // no meeting
+  }
+
+  List<MeetingItem>? _selectedMeetings = [];
+  List<MeetingItem>? get selectedMeetings => _selectedMeetings;
+  set selectedMeetings(List<MeetingItem>? val) {
+    _selectedMeetings = val;
     notifyListeners();
-  } */
+  }
+
+  getMeetingsList(DateTime day) {
+    try {
+      if (selectedMeetings == null || selectedMeetings!.isEmpty) {
+        DateTime targetedDate = DateTime(day.year, day.month, day.day);
+        MeetingDate? meetings = meetingResponse!.data.firstWhere(
+          (entry) => DateTime.parse(entry.date) == targetedDate,
+        );
+        if (meetings != null) {
+          List<MeetingItem> items = meetings.items;
+          if (items.isNotEmpty) {
+            selectedMeetings!.addAll(items);
+          }
+        }
+      } else {
+        selectedMeetings = [];
+      }
+    } catch (_) {}
+  }
 }
