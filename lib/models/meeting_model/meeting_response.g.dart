@@ -11,9 +11,11 @@ MeetingResponse _$MeetingResponseFromJson(Map<String, dynamic> json) =>
       status: (json['status'] as num).toInt(),
       message: json['message'] as String,
       data:
-          (json['data'] as List<dynamic>)
-              .map((e) => MeetingDate.fromJson(e as Map<String, dynamic>))
-              .toList(),
+          json['data'] != null
+              ? (json['data'] as List<dynamic>)
+                  .map((e) => MeetingDate.fromJson(e as Map<String, dynamic>))
+                  .toList()
+              : [],
     );
 
 Map<String, dynamic> _$MeetingResponseToJson(MeetingResponse instance) =>

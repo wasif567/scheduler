@@ -1,16 +1,12 @@
-import 'dart:developer';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:scheduler/core/app_colors/app_colors.dart';
 import 'package:scheduler/models/meeting_item/meeting_item.dart';
 import 'package:scheduler/models/meeting_model/meeting_response.dart';
-import 'package:scheduler/pages/widgets/meeting_list.dart';
 import 'package:scheduler/service/meeting_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class MeetingProvider with ChangeNotifier {
+  PageController pageController = PageController();
+
   MeetingProvider() {
     fetchingMeeting(DateTime.now());
   }
@@ -38,17 +34,28 @@ class MeetingProvider with ChangeNotifier {
 
   List<DateTime> parsedDates = [];
 
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+  set isLoading(bool val) {
+    _isLoading = val;
+    notifyListeners();
+  }
+
   fetchingMeeting(DateTime date) async {
     try {
+      focusedDay = date;
+      selectedDate = null;
+      selectedMeetings = [];
       parsedDates = [];
+      notifyListeners();
       MeetingService service = MeetingService();
+      meetingResponse = MeetingResponse(status: 0, message: "", data: []);
       MeetingResponse? meetingRes = await service.fetchMeetings(date: date);
 
       if (meetingRes != null) {
         meetingResponse = meetingRes;
         notifyListeners();
 
-        log("${meetingResponse!.toJson()}");
         if (meetingResponse!.data.isNotEmpty) {
           for (var meetindata in meetingResponse!.data) {
             DateTime date = DateTime.parse(meetindata.date);
@@ -56,17 +63,13 @@ class MeetingProvider with ChangeNotifier {
             if (!parsedDates.contains(date)) {
               parsedDates.add(date);
             }
-
-            log("${meetindata.toJson()}");
-            for (var item in meetindata.items) {
-              log("${item.toJson()}");
-            }
           }
-          log("${parsedDates.length}");
         }
       }
+
+      notifyListeners();
     } catch (_) {
-      meetingResponse = null;
+      isLoading = false;
     }
   }
 
@@ -76,7 +79,9 @@ class MeetingProvider with ChangeNotifier {
     final DateTime justToday = DateTime(today.year, today.month, today.day);
     if (meetingResponse != null) {
       if (meetingResponse!.data != null && meetingResponse!.data.isNotEmpty) {
-        if (meetingResponse!.data.any((meetingDate) => isSameDay(DateTime.parse(meetingDate.date), day))) {
+        if (meetingResponse!.data.any(
+          (meetingDate) => isSameDay(DateTime.parse(meetingDate.date), day),
+        )) {
           if (isSameDay(justDate, justToday)) {
             return Colors.yellow; // current day meeting
           } else if (justDate.isAfter(justToday)) {
@@ -98,22 +103,48 @@ class MeetingProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  MeetingDate? _selectedDate;
+  MeetingDate? get selectedDate => _selectedDate;
+  set selectedDate(MeetingDate? val) {
+    _selectedDate = val;
+    notifyListeners();
+  }
+
   getMeetingsList(DateTime day) {
     try {
-      if (selectedMeetings == null || selectedMeetings!.isEmpty) {
+      selectedDate = null;
+      selectedMeetings = [];
+      DateTime? parsedDate;
+      if (selectedDate != null) {
+        parsedDate = DateTime.parse(selectedDate!.date);
+      }
+      if (selectedDate == null ||
+          selectedDate!.items.isEmpty ||
+          !(isSameDay(parsedDate, day))) {
         DateTime targetedDate = DateTime(day.year, day.month, day.day);
-        MeetingDate? meetings = meetingResponse!.data.firstWhere(
+        MeetingDate? meetings;
+        int index = meetingResponse!.data.indexWhere(
           (entry) => DateTime.parse(entry.date) == targetedDate,
         );
-        if (meetings != null) {
-          List<MeetingItem> items = meetings.items;
-          if (items.isNotEmpty) {
-            selectedMeetings!.addAll(items);
+        if (index != -1) {
+          meetings = meetingResponse!.data.firstWhere(
+            (entry) => DateTime.parse(entry.date) == targetedDate,
+          );
+          if (meetings != null) {
+            selectedDate = MeetingDate(date: "", items: []);
+            List<MeetingItem> items = meetings.items;
+            if (items.isNotEmpty) {
+              selectedMeetings!.addAll(items);
+            }
+            selectedDate!.date = meetings.date;
+            selectedDate!.items.addAll(selectedMeetings!);
           }
         }
       } else {
+        selectedDate = null;
         selectedMeetings = [];
       }
+      notifyListeners();
     } catch (_) {}
   }
 }

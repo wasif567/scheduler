@@ -6,10 +6,15 @@ import 'package:scheduler/provider/meeting_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (context) => MeetingProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (context) => MeetingProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -23,7 +28,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Meeting Scheduler',
-      theme: ThemeData(primarySwatch: Colors.blue, visualDensity: VisualDensity.adaptivePlatformDensity),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
       home: const MeetingSchedulerScreen(),
     );
   }
